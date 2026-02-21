@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import InstallBanner from "@/components/InstallBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,9 +14,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clarito — Escaneá lo que comés",
+  title: "Clarito — Sabé lo que comés",
   description:
     "Escaneá productos y descubrí qué tan saludables son. Información clara sobre lo que comés en Argentina.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Clarito",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -36,6 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-clarito-bg font-sans antialiased`}
       >
         {children}
+        <InstallBanner />
       </body>
     </html>
   );
