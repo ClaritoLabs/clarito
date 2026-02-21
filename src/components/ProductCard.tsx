@@ -17,15 +17,15 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/producto/${product.barcode}`}>
-      <div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-2xl">
+      <div className="flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-white p-3.5 shadow-sm transition-all hover:shadow-md active:scale-[0.98] sm:gap-4 sm:p-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-2xl sm:h-12 sm:w-12">
           {product.emoji}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-semibold text-clarito-green-dark">
+          <h3 className="truncate text-sm font-semibold text-clarito-green-dark sm:text-base">
             {product.name}
           </h3>
-          <p className="text-sm text-gray-500">{product.brand}</p>
+          <p className="text-xs text-gray-500 sm:text-sm">{product.brand}</p>
           <div className="mt-1 flex items-center gap-2">
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
               {product.category}

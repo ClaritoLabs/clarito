@@ -41,16 +41,16 @@ function getBarColor(key: string, value: number, max: number): string {
 export default function NutritionBars({ nutrition }: NutritionBarsProps) {
   return (
     <div>
-      <h3 className="mb-4 text-lg font-semibold text-clarito-green-dark">
+      <h3 className="mb-4 text-lg font-semibold text-clarito-green-dark md:text-xl">
         Nutrición por 100g
       </h3>
-      <div className="space-y-3.5">
+      <div className="space-y-3.5 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-4 md:space-y-0">
         {nutrients.map(({ key, label, unit, max, emoji }) => {
           const value = nutrition[key];
           const pct = Math.min((value / max) * 100, 100);
           return (
             <div key={key}>
-              <div className="mb-1 flex items-center justify-between text-sm">
+              <div className="mb-1 flex items-center justify-between text-sm md:text-base">
                 <span className="flex items-center gap-1.5 text-gray-700">
                   <span className="text-xs">{emoji}</span>
                   {label}
@@ -60,7 +60,7 @@ export default function NutritionBars({ nutrition }: NutritionBarsProps) {
                   {unit}
                 </span>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100 md:h-3">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ease-out ${getBarColor(key, value, max)}`}
                   style={{ width: `${pct}%` }}
