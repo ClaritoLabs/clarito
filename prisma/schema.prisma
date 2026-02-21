@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  barcode            String   @unique
+  name               String
+  brand              String
+  category           String
+  score              Int // 0-100
+  rating             String // Excelente, Bueno, Mediocre, Malo
+  novaGroup          Int // 1-4
+
+  // Octógonos ley de etiquetado frontal
+  excessSugar        Boolean  @default(false)
+  excessSodium       Boolean  @default(false)
+  excessFat          Boolean  @default(false)
+  excessSaturatedFat Boolean  @default(false)
+  excessCalories     Boolean  @default(false)
+
+  // JSON fields
+  nutrition          Json // { calories, totalFat, saturatedFat, sodium, totalCarbs, sugars, fiber, protein }
+  ingredients        Json // [{ name, riskLevel }]
+
+  imageUrl           String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
