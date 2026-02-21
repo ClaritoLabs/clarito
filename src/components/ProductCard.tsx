@@ -4,9 +4,13 @@ import ScoreCircle from "./ScoreCircle";
 
 interface ProductCardProps {
   product: Product;
+  source?: "local" | "saved" | "off";
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  source,
+}: ProductCardProps) {
   const octagonCount = [
     product.excessSugar,
     product.excessSodium,
@@ -26,7 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
           <p className="text-xs text-gray-500 sm:text-sm">{product.brand}</p>
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
               {product.category}
             </span>
@@ -34,6 +38,16 @@ export default function ProductCard({ product }: ProductCardProps) {
               <span className="flex items-center gap-1 text-xs font-medium text-clarito-red">
                 <span>⬡</span>
                 {octagonCount} sello{octagonCount > 1 ? "s" : ""}
+              </span>
+            )}
+            {source === "off" && (
+              <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-500">
+                OFF
+              </span>
+            )}
+            {source === "saved" && (
+              <span className="rounded-full bg-clarito-green-light px-1.5 py-0.5 text-[10px] font-medium text-clarito-green">
+                Guardado
               </span>
             )}
           </div>

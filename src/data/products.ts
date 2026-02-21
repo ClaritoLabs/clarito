@@ -719,6 +719,7 @@ export const categories = [
   "Snacks",
   "Golosinas",
   "Panificados",
+  "Otros",
 ];
 
 export const categoryEmojis: Record<string, string> = {
@@ -729,6 +730,7 @@ export const categoryEmojis: Record<string, string> = {
   Snacks: "🥔",
   Golosinas: "🍫",
   Panificados: "🍞",
+  Otros: "📦",
 };
 
 export function getProductByBarcode(barcode: string): Product | undefined {
