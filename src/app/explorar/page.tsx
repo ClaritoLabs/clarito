@@ -19,8 +19,7 @@ export default function Explorar() {
     typeof hardcodedProducts
   >([]);
 
-  const { offResults, isSearching, error: offError, searchOFF, clearResults } =
-    useOFFSearch();
+  const { offResults, isSearching } = useOFFSearch(query);
 
   // Load saved products from localStorage on mount
   useEffect(() => {
@@ -36,9 +35,9 @@ export default function Explorar() {
     return [...hardcodedProducts, ...uniqueSaved];
   }, [savedProducts]);
 
-  const filteredProducts = useMemo(() => {
+  // Local results (instant)
+  const localResults = useMemo(() => {
     let result = query ? searchProducts(query) : allLocalProducts;
-    // Also search saved products by name/brand
     if (query) {
       const q = query.toLowerCase();
       const savedMatches = savedProducts.filter(
@@ -61,16 +60,19 @@ export default function Explorar() {
     return result;
   }, [query, selectedCategory, allLocalProducts, savedProducts]);
 
-  // Clear OFF results when query changes
-  useEffect(() => {
-    clearResults();
-  }, [query, clearResults]);
+  // Unified results: local first, then OFF (deduplicated by barcode)
+  const allResults = useMemo(() => {
+    if (!query.trim()) return localResults;
+    const localBarcodes = new Set(localResults.map((p) => p.barcode));
+    let offFiltered = offResults.filter((p) => !localBarcodes.has(p.barcode));
+    if (selectedCategory !== "Todas") {
+      offFiltered = offFiltered.filter((p) => p.category === selectedCategory);
+    }
+    return [...localResults, ...offFiltered];
+  }, [localResults, offResults, query, selectedCategory]);
 
-  const showOFFButton =
-    filteredProducts.length === 0 &&
-    query.trim().length > 0 &&
-    !isSearching &&
-    offResults.length === 0;
+  const hasQuery = query.trim().length > 0;
+  const noResults = hasQuery && allResults.length === 0 && !isSearching;
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl">
@@ -132,7 +134,14 @@ export default function Explorar() {
               onChange={(e) => setQuery(e.target.value)}
               className="h-12 w-full rounded-2xl bg-white/95 pl-11 pr-10 text-sm text-gray-800 shadow-sm outline-none backdrop-blur-sm placeholder:text-gray-400 focus:ring-2 focus:ring-clarito-green md:text-base"
             />
-            {query && (
+            {/* Spinner inside search bar while fetching */}
+            {isSearching && hasQuery && (
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-clarito-green" />
+              </div>
+            )}
+            {/* Clear button (only when not searching) */}
+            {query && !isSearching && (
               <button
                 onClick={() => setQuery("")}
                 className="absolute right-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300"
@@ -177,113 +186,63 @@ export default function Explorar() {
       {/* Results count */}
       <div className="px-4 pb-2 sm:px-6 md:px-8">
         <p className="text-xs text-gray-400 md:text-sm">
-          {filteredProducts.length} producto
-          {filteredProducts.length !== 1 ? "s" : ""}
+          {allResults.length} producto
+          {allResults.length !== 1 ? "s" : ""}
           {selectedCategory !== "Todas" && ` en ${selectedCategory}`}
-          {query && ` para "${query}"`}
+          {hasQuery && ` para "${query}"`}
+          {isSearching && hasQuery && " — buscando más..."}
         </p>
       </div>
 
-      {/* Product grid */}
+      {/* Product grid — unified list */}
       <main className="px-4 pb-8 sm:px-6 md:px-8">
-        {filteredProducts.length > 0 && (
+        {allResults.length > 0 && (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
+            {allResults.map((product) => (
               <ProductCard key={product.barcode} product={product} />
             ))}
           </div>
         )}
 
-        {/* Empty local results */}
-        {filteredProducts.length === 0 && !isSearching && offResults.length === 0 && (
-          <div className="py-12 text-center">
+        {/* No results from any source */}
+        {noResults && (
+          <div className="py-16 text-center">
             <p className="text-4xl">🔍</p>
-            <p className="mt-3 text-lg font-medium text-gray-400">
-              No se encontraron productos
+            <p className="mt-4 text-lg font-medium text-gray-500">
+              No encontramos ese producto
             </p>
-            <p className="mt-1 text-sm text-gray-300">
-              Intentá con otro nombre o marca
+            <p className="mt-1.5 text-sm text-gray-400">
+              Todavía no tenemos datos sobre &quot;{query}&quot;
             </p>
-          </div>
-        )}
-
-        {/* Search OFF button */}
-        {showOFFButton && (
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={() => searchOFF(query)}
-              className="flex h-12 items-center gap-2 rounded-2xl bg-clarito-green px-6 text-sm font-semibold text-white shadow-sm transition-all hover:bg-clarito-green/90 active:scale-[0.98]"
+            <Link
+              href="/contribuir"
+              className="mt-6 inline-flex h-11 items-center gap-2 rounded-xl bg-clarito-green-dark px-5 text-sm font-semibold text-white transition-all hover:bg-clarito-green-dark/80 active:scale-[0.98]"
             >
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth={2}
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                  d="M12 4v16m8-8H4"
                 />
               </svg>
-              Buscar en Open Food Facts
-            </button>
+              Agregar este producto
+            </Link>
           </div>
         )}
 
-        {/* Loading spinner */}
-        {isSearching && (
-          <div className="flex flex-col items-center gap-3 py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-3 border-gray-200 border-t-clarito-green" />
-            <p className="text-sm text-gray-400">
-              Buscando en Open Food Facts...
-            </p>
+        {/* Only searching, no local results yet */}
+        {hasQuery && allResults.length === 0 && isSearching && (
+          <div className="flex flex-col items-center gap-3 py-16">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-clarito-green" />
+            <p className="text-sm text-gray-400">Buscando productos...</p>
           </div>
         )}
-
-        {/* OFF error */}
-        {offError && (
-          <div className="mt-4 rounded-2xl bg-red-50 p-4 text-center">
-            <p className="text-sm text-clarito-red">{offError}</p>
-          </div>
-        )}
-
-        {/* OFF results */}
-        {offResults.length > 0 && (
-          <div className="mt-6">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs font-medium text-gray-400">
-                Resultados de Open Food Facts
-              </span>
-              <div className="h-px flex-1 bg-gray-200" />
-            </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-              {offResults.map((product) => (
-                <ProductCard
-                  key={product.barcode}
-                  product={product}
-                  source="off"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* OFF search returned nothing */}
-        {!isSearching &&
-          offResults.length === 0 &&
-          filteredProducts.length === 0 &&
-          offError === null &&
-          !showOFFButton &&
-          query.trim().length > 0 && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-400">
-                Tampoco se encontraron resultados en Open Food Facts.
-              </p>
-            </div>
-          )}
       </main>
     </div>
   );

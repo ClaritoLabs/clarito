@@ -4,12 +4,10 @@ import ScoreCircle from "./ScoreCircle";
 
 interface ProductCardProps {
   product: Product;
-  source?: "local" | "saved" | "off";
 }
 
 export default function ProductCard({
   product,
-  source,
 }: ProductCardProps) {
   const octagonCount = [
     product.excessSugar,
@@ -38,16 +36,6 @@ export default function ProductCard({
               <span className="flex items-center gap-1 text-xs font-medium text-clarito-red">
                 <span>⬡</span>
                 {octagonCount} sello{octagonCount > 1 ? "s" : ""}
-              </span>
-            )}
-            {source === "off" && (
-              <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-500">
-                OFF
-              </span>
-            )}
-            {source === "saved" && (
-              <span className="rounded-full bg-clarito-green-light px-1.5 py-0.5 text-[10px] font-medium text-clarito-green">
-                Guardado
               </span>
             )}
           </div>

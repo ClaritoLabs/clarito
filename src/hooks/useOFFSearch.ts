@@ -1,36 +1,54 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Product } from "@/lib/types";
 import { searchOFF } from "@/lib/openfoodfacts";
 
-export function useOFFSearch() {
+export function useOFFSearch(query: string, debounceMs = 500) {
   const [offResults, setOffResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const search = useCallback(async (query: string) => {
-    setIsSearching(true);
-    setError(null);
-    setOffResults([]);
-    try {
-      const results = await searchOFF(query);
-      setOffResults(results);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Error al buscar en Open Food Facts."
-      );
-    } finally {
+  useEffect(() => {
+    const trimmed = query.trim();
+
+    // Clear results immediately when query is empty or too short
+    if (trimmed.length < 2) {
+      setOffResults([]);
       setIsSearching(false);
+      return;
     }
-  }, []);
 
-  const clearResults = useCallback(() => {
-    setOffResults([]);
-    setError(null);
-  }, []);
+    // Mark as searching immediately so UI can show spinner
+    setIsSearching(true);
 
-  return { offResults, isSearching, error, searchOFF: search, clearResults };
+    const timer = setTimeout(async () => {
+      // Abort any in-flight request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const results = await searchOFF(trimmed);
+        if (!controller.signal.aborted) {
+          setOffResults(results);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setOffResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, debounceMs);
+
+    return () => {
+      clearTimeout(timer);
+      abortRef.current?.abort();
+    };
+  }, [query, debounceMs]);
+
+  return { offResults, isSearching };
 }
