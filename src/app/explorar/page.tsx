@@ -19,7 +19,7 @@ export default function Explorar() {
     typeof hardcodedProducts
   >([]);
 
-  const { offResults, isSearching } = useOFFSearch(query);
+  const { offResults, isSearching, offError } = useOFFSearch(query);
 
   // Load saved products from localStorage on mount
   useEffect(() => {
@@ -193,6 +193,13 @@ export default function Explorar() {
           {isSearching && hasQuery && " — buscando más..."}
         </p>
       </div>
+
+      {/* OFF partial failure */}
+      {offError && hasQuery && (
+        <div className="px-4 pb-2 sm:px-6 md:px-8">
+          <p className="text-xs text-gray-400">{offError}</p>
+        </div>
+      )}
 
       {/* Product grid — unified list */}
       <main className="px-4 pb-8 sm:px-6 md:px-8">
