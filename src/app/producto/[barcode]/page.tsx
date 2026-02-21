@@ -3,8 +3,8 @@
 import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductByBarcode } from "@/lib/data";
-import { generateSummary, getNovaColor, getNovaLabel } from "@/lib/utils";
+import { getProductByBarcode } from "@/data/products";
+import { getNovaColor, getNovaLabel, getScoreColor } from "@/lib/utils";
 import ScoreCircle from "@/components/ScoreCircle";
 import RatingBadge from "@/components/RatingBadge";
 import OctagonBadge from "@/components/OctagonBadge";
@@ -24,7 +24,8 @@ export default function ProductDetail({
   }
 
   const octagonos: { key: string; label: string }[] = [];
-  if (product.excessSugar) octagonos.push({ key: "sugar", label: "Azúcares" });
+  if (product.excessSugar)
+    octagonos.push({ key: "sugar", label: "Azúcares" });
   if (product.excessSodium)
     octagonos.push({ key: "sodium", label: "Sodio" });
   if (product.excessFat)
@@ -34,45 +35,48 @@ export default function ProductDetail({
   if (product.excessCalories)
     octagonos.push({ key: "cal", label: "Calorías" });
 
-  const summary = generateSummary(product);
+  const scoreColor = getScoreColor(product.score);
 
-  const shareText = `${product.name} (${product.brand}) tiene un puntaje de ${product.score}/100 en Clarito. ${product.rating === "Malo" ? "No es una buena opción." : product.rating === "Excelente" ? "Es una buena opción!" : "Consumí con moderación."}`;
+  const shareText = `Escaneé *${product.name}* (${product.brand}) con *Clarito* y tiene un puntaje de *${product.score}/100* - ${product.rating}${octagonos.length > 0 ? `\n${octagonos.length} sello${octagonos.length > 1 ? "s" : ""} de advertencia` : ""}\n\nMirá más en clarito-cyan.vercel.app`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg pb-24">
+    <div className="mx-auto min-h-screen max-w-lg pb-28">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center gap-3 bg-clarito-green-dark px-5 pb-4 pt-12">
-        <Link
-          href="/"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-        >
-          <svg
-            className="h-5 w-5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <header className="sticky top-0 z-10 bg-clarito-green-dark px-5 pb-4 pt-12">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </Link>
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold text-white">
-            {product.name}
-          </h1>
-          <p className="text-sm text-green-200/70">{product.brand}</p>
+            <svg
+              className="h-5 w-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-bold text-white">
+              {product.name}
+            </h1>
+            <p className="text-sm text-green-200/70">{product.brand}</p>
+          </div>
+          <span className="text-3xl">{product.emoji}</span>
         </div>
       </header>
 
       {/* Score section */}
-      <section className="flex flex-col items-center gap-3 px-5 py-8">
-        <ScoreCircle score={product.score} size="lg" />
-        <RatingBadge rating={product.rating} />
+      <section className="flex flex-col items-center gap-4 px-5 py-8">
+        <ScoreCircle score={product.score} size="lg" animated />
+        <RatingBadge rating={product.rating} size="lg" />
         <div className="flex items-center gap-2">
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${getNovaColor(product.novaGroup)}`}
@@ -85,37 +89,48 @@ export default function ProductDetail({
         </div>
       </section>
 
-      {/* Octógonos */}
+      {/* Octógonos de la Ley de Etiquetado */}
       {octagonos.length > 0 && (
-        <section className="px-5 pb-6">
-          <h3 className="mb-3 text-lg font-semibold text-clarito-green-dark">
-            Sellos de advertencia
+        <section className="animate-fade-in-up px-5 pb-6" style={{ animationDelay: "0.1s" }}>
+          <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-clarito-green-dark">
+            <span>⬡</span> Sellos de advertencia
           </h3>
-          <div className="flex flex-wrap justify-center gap-4 rounded-2xl bg-white p-5 shadow-sm">
-            {octagonos.map((o) => (
-              <OctagonBadge key={o.key} label={o.label} />
-            ))}
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap justify-center gap-5">
+              {octagonos.map((o) => (
+                <OctagonBadge key={o.key} label={o.label} />
+              ))}
+            </div>
+            <p className="mt-4 text-center text-xs text-gray-400">
+              Según la Ley de Etiquetado Frontal (Ley 27.642)
+            </p>
           </div>
         </section>
       )}
 
-      {/* Summary */}
-      <section className="px-5 pb-6">
-        <h3 className="mb-2 text-lg font-semibold text-clarito-green-dark">
-          Resumen
+      {/* En resumen */}
+      <section className="animate-fade-in-up px-5 pb-6" style={{ animationDelay: "0.2s" }}>
+        <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold text-clarito-green-dark">
+          <span>💬</span> En resumen
         </h3>
-        <p className="rounded-2xl bg-white p-4 text-sm leading-relaxed text-gray-700 shadow-sm">
-          {summary}
-        </p>
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
+          <div
+            className="mb-3 h-1 w-12 rounded-full"
+            style={{ backgroundColor: scoreColor }}
+          />
+          <p className="text-sm leading-relaxed text-gray-700">
+            {product.summary}
+          </p>
+        </div>
       </section>
 
       {/* Ingredients */}
-      <section className="px-5 pb-6">
+      <section className="animate-fade-in-up px-5 pb-6" style={{ animationDelay: "0.3s" }}>
         <IngredientList ingredients={product.ingredients} />
       </section>
 
       {/* Nutrition */}
-      <section className="px-5 pb-6">
+      <section className="animate-fade-in-up px-5 pb-6" style={{ animationDelay: "0.4s" }}>
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <NutritionBars nutrition={product.nutrition} />
         </div>
@@ -123,31 +138,65 @@ export default function ProductDetail({
 
       {/* Alternatives */}
       {product.alternatives.length > 0 && (
-        <section className="px-5 pb-6">
-          <h3 className="mb-3 text-lg font-semibold text-clarito-green-dark">
-            Alternativas más saludables
+        <section className="animate-fade-in-up px-5 pb-6" style={{ animationDelay: "0.5s" }}>
+          <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-clarito-green-dark">
+            <span>🔄</span> Alternativas más saludables
           </h3>
           <div className="space-y-2">
-            {product.alternatives.map((alt, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm"
-              >
-                <div>
-                  <p className="font-medium text-gray-800">{alt.name}</p>
-                  <p className="text-sm text-gray-500">{alt.brand}</p>
+            {product.alternatives.map((alt, i) => {
+              const inner = (
+                <div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                  <div>
+                    <p className="font-medium text-gray-800">{alt.name}</p>
+                    <p className="text-sm text-gray-500">{alt.brand}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-clarito-green">
+                      {alt.score}
+                    </span>
+                    <span className="text-xs text-gray-400">/100</span>
+                    {alt.barcode && (
+                      <svg
+                        className="h-4 w-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-clarito-green">
-                    {alt.score}
-                  </span>
-                  <span className="text-xs text-gray-400">/100</span>
-                </div>
-              </div>
-            ))}
+              );
+
+              return alt.barcode ? (
+                <Link key={i} href={`/producto/${alt.barcode}`}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={i}>{inner}</div>
+              );
+            })}
           </div>
         </section>
       )}
+
+      {/* Disclaimer */}
+      <section className="px-5 pb-8">
+        <div className="rounded-2xl bg-gray-50 p-4">
+          <p className="text-center text-xs leading-relaxed text-gray-400">
+            La información nutricional es orientativa y se basa en datos
+            públicos del envase del producto. Los puntajes son calculados por un
+            algoritmo propio y no reemplazan el asesoramiento de un profesional
+            de la salud. Clarito no tiene relación comercial con ninguna marca.
+          </p>
+        </div>
+      </section>
 
       {/* WhatsApp share button */}
       <div className="fixed bottom-0 left-0 right-0 z-20 mx-auto max-w-lg">

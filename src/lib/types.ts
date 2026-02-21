@@ -5,6 +5,7 @@ export type Rating = "Excelente" | "Bueno" | "Mediocre" | "Malo";
 export interface Ingredient {
   name: string;
   riskLevel: RiskLevel;
+  description?: string;
 }
 
 export interface Nutrition {
@@ -30,6 +31,7 @@ export interface Product {
   name: string;
   brand: string;
   category: string;
+  emoji: string;
   score: number;
   rating: Rating;
   novaGroup: 1 | 2 | 3 | 4;
@@ -38,6 +40,7 @@ export interface Product {
   excessFat: boolean;
   excessSaturatedFat: boolean;
   excessCalories: boolean;
+  summary: string;
   nutrition: Nutrition;
   ingredients: Ingredient[];
   imageUrl?: string;

@@ -4,78 +4,65 @@ interface NutritionBarsProps {
   nutrition: Nutrition;
 }
 
-const maxValues: Record<string, number> = {
-  calories: 600,
-  totalFat: 50,
-  saturatedFat: 25,
-  sodium: 800,
-  totalCarbs: 80,
-  sugars: 50,
-  fiber: 10,
-  protein: 30,
-};
+const nutrients: {
+  key: keyof Nutrition;
+  label: string;
+  unit: string;
+  max: number;
+  emoji: string;
+}[] = [
+  { key: "calories", label: "Calorías", unit: "kcal", max: 600, emoji: "🔥" },
+  { key: "totalFat", label: "Grasas totales", unit: "g", max: 50, emoji: "🫒" },
+  {
+    key: "saturatedFat",
+    label: "Grasas saturadas",
+    unit: "g",
+    max: 25,
+    emoji: "🧈",
+  },
+  { key: "sugars", label: "Azúcares", unit: "g", max: 50, emoji: "🍬" },
+  { key: "sodium", label: "Sodio", unit: "mg", max: 800, emoji: "🧂" },
+  { key: "fiber", label: "Fibra", unit: "g", max: 10, emoji: "🌾" },
+  { key: "protein", label: "Proteínas", unit: "g", max: 30, emoji: "💪" },
+];
 
-const labels: Record<string, string> = {
-  calories: "Calorías",
-  totalFat: "Grasas totales",
-  saturatedFat: "Grasas saturadas",
-  sodium: "Sodio",
-  totalCarbs: "Carbohidratos",
-  sugars: "Azúcares",
-  fiber: "Fibra",
-  protein: "Proteínas",
-};
-
-const units: Record<string, string> = {
-  calories: "kcal",
-  totalFat: "g",
-  saturatedFat: "g",
-  sodium: "mg",
-  totalCarbs: "g",
-  sugars: "g",
-  fiber: "g",
-  protein: "g",
-};
-
-function getBarColor(key: string, value: number): string {
-  const max = maxValues[key];
+function getBarColor(key: string, value: number, max: number): string {
   const pct = value / max;
-
   if (key === "fiber" || key === "protein") {
     if (pct >= 0.5) return "bg-clarito-green";
     if (pct >= 0.25) return "bg-yellow-500";
     return "bg-gray-300";
   }
-
   if (pct >= 0.6) return "bg-clarito-red";
   if (pct >= 0.3) return "bg-clarito-orange";
   return "bg-clarito-green";
 }
 
 export default function NutritionBars({ nutrition }: NutritionBarsProps) {
-  const entries = Object.entries(nutrition) as [string, number][];
-
   return (
     <div>
-      <h3 className="mb-3 text-lg font-semibold text-clarito-green-dark">
+      <h3 className="mb-4 text-lg font-semibold text-clarito-green-dark">
         Nutrición por 100g
       </h3>
-      <div className="space-y-3">
-        {entries.map(([key, value]) => {
-          const max = maxValues[key];
+      <div className="space-y-3.5">
+        {nutrients.map(({ key, label, unit, max, emoji }) => {
+          const value = nutrition[key];
           const pct = Math.min((value / max) * 100, 100);
           return (
             <div key={key}>
               <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="text-gray-700">{labels[key]}</span>
-                <span className="font-medium text-gray-900">
+                <span className="flex items-center gap-1.5 text-gray-700">
+                  <span className="text-xs">{emoji}</span>
+                  {label}
+                </span>
+                <span className="font-semibold text-gray-900">
                   {value}
-                  {units[key]}
+                  {unit}
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${getBarColor(key, value)}`}
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${getBarColor(key, value, max)}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
