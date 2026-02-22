@@ -243,9 +243,9 @@ export const products: Product[] = [
       },
       {
         name: "Dextrosa",
-        riskLevel: "moderate",
+        riskLevel: "risky",
         description:
-          "Forma simple de glucosa usada para potenciar el sabor. Es azúcar con otro nombre, aunque en pequeñas cantidades.",
+          "Forma simple de glucosa usada para potenciar el sabor. Es azúcar con otro nombre y un marcador de ultra-procesamiento.",
       },
     ],
     alternatives: [
@@ -339,16 +339,16 @@ export const products: Product[] = [
     brand: "Quilmes",
     category: "Bebidas",
     emoji: "🍺",
-    score: 20,
-    rating: "Malo",
-    novaGroup: 4,
+    score: 75,
+    rating: "Bueno",
+    novaGroup: 3,
     excessSugar: false,
     excessSodium: false,
     excessFat: false,
     excessSaturatedFat: false,
-    excessCalories: true,
+    excessCalories: false,
     summary:
-      "La Cerveza Quilmes es una bebida alcohólica ultraprocesada. El alcohol aporta calorías vacías (7 kcal/g) sin ningún valor nutricional. El consumo regular de alcohol se asocia con daño hepático, mayor riesgo de cáncer y dependencia. Aunque los ingredientes base son simples (agua, malta, lúpulo), la presencia de alcohol la convierte en un producto de bajo puntaje.",
+      "La Cerveza Quilmes es una bebida alcohólica procesada. Sus ingredientes base son simples (agua, malta, lúpulo, levadura) y no contiene aditivos ultraprocesados. Sin embargo, el alcohol aporta calorías vacías (7 kcal/g) sin valor nutricional. El consumo regular de alcohol se asocia con daño hepático, mayor riesgo de cáncer y dependencia. Consumí con moderación.",
     nutrition: {
       calories: 42,
       totalFat: 0,
@@ -397,16 +397,16 @@ export const products: Product[] = [
     brand: "Bimbo",
     category: "Panificados",
     emoji: "🍞",
-    score: 42,
-    rating: "Mediocre",
-    novaGroup: 4,
+    score: 79,
+    rating: "Excelente",
+    novaGroup: 3,
     excessSugar: false,
     excessSodium: true,
     excessFat: false,
     excessSaturatedFat: false,
     excessCalories: false,
     summary:
-      "El Pan Lactal Bimbo es un panificado ultraprocesado que parece inofensivo pero tiene exceso de sodio (500mg/100g). Usa harina refinada con poco valor nutricional, y contiene propionato de calcio como conservante para extender la vida útil. Un pan de panadería o pan integral casero sería mucho más nutritivo.",
+      "El Pan Lactal Bimbo es un panificado procesado con exceso de sodio (500mg/100g). Usa harina refinada con poco valor nutricional, y contiene conservantes simples como propionato de calcio y ácido ascórbico. No tiene ingredientes ultraprocesados, pero un pan integral casero sería más nutritivo.",
     nutrition: {
       calories: 260,
       totalFat: 3,
@@ -431,7 +431,7 @@ export const products: Product[] = [
       },
       {
         name: "Azúcar",
-        riskLevel: "moderate",
+        riskLevel: "risky",
         description: "6g cada 100g. No es excesivo pero es innecesario en el pan. Mejora el sabor y la textura industrial.",
       },
       {
@@ -516,9 +516,9 @@ export const products: Product[] = [
       },
       {
         name: "Almidón modificado",
-        riskLevel: "moderate",
+        riskLevel: "risky",
         description:
-          "Espesante industrial que le da la textura cremosa. No es nocivo, pero indica un producto procesado. Reemplaza a la cremosidad natural del yogur.",
+          "Espesante industrial que le da la textura cremosa. Marcador de ultra-procesamiento. Reemplaza a la cremosidad natural del yogur.",
       },
       {
         name: "Saborizante a vainilla",

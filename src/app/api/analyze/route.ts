@@ -104,7 +104,15 @@ IMPORTANTE:
 - Si el sodio está en g, convertilo a mg (multiplicar por 1000).
 - Si algún dato no es legible, poné null.
 - Interpretá los datos de la tabla nutricional argentina.
-- Devolvé SOLO el JSON, sin texto adicional.`,
+- Devolvé SOLO el JSON, sin texto adicional.
+- Extraé los ingredientes EXACTAMENTE como aparecen en el envase, separados individualmente.
+  Necesitamos detectar estos marcadores de ultra-procesamiento:
+  jarabe de maíz, alta fructosa, aceite/grasa hidrogenado/a, proteína aislada/hidrolizada,
+  almidón modificado, dextrosa, maltodextrina, jarabe de glucosa, glutamato monosódico,
+  aspartamo, acesulfame, sucralosa, sacarina, ciclamato, carboximetilcelulosa, polisorbato,
+  TBHQ, BHA, BHT, nitrito de sodio, nitrato, colorantes (rojo 40, amarillo 5/6, azul 1,
+  caramelo IV), saborizante artificial, aroma artificial.
+  Si ves alguno de estos en la lista de ingredientes, asegurate de incluirlo textualmente.`,
   });
 
   try {

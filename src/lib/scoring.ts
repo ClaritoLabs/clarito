@@ -76,15 +76,60 @@ export function scoreToRating(score: number): Rating {
   return "Malo";
 }
 
-// Keywords for ingredient risk classification
+// Marcadores de ultra-procesado (NOVA 4)
+// Si el producto contiene AL MENOS UNO de estos, es ultra-procesado
+const ULTRA_PROCESSED_MARKERS = [
+  "jarabe de maiz", "jarabe de maíz",
+  "alta fructosa",
+  "aceite hidrogenado", "aceite vegetal hidrogenado",
+  "grasa hidrogenada", "grasa vegetal hidrogenada",
+  "proteina aislada", "proteína aislada",
+  "proteina hidrolizada", "proteína hidrolizada",
+  "almidon modificado", "almidón modificado",
+  "dextrosa",
+  "maltodextrina",
+  "jarabe de glucosa",
+  "glutamato monosodico", "glutamato monosódico",
+  "aspartamo",
+  "acesulfame",
+  "sucralosa",
+  "sacarina",
+  "ciclamato",
+  "carboximetilcelulosa",
+  "polisorbato",
+  "tbhq",
+  "bha",
+  "bht",
+  "nitrito de sodio", "nitrito",
+  "nitrato",
+  "rojo 40", "red 40",
+  "amarillo 5", "yellow 5",
+  "amarillo 6", "yellow 6",
+  "azul 1", "blue 1",
+  "caramelo iv", "caramelo 4", "e150d",
+  "saborizante artificial", "aroma artificial",
+  "colorante artificial",
+];
+
+// Marcadores de procesado (NOVA 3)
+// Producto con 4-8 ingredientes que contiene estos PERO NINGUNO de ultra-procesado
+const PROCESSED_MARKERS = [
+  "sal",
+  "azucar", "azúcar",
+  "aceite",
+  "vinagre",
+  "sorbato de potasio", "sorbato",
+  "acido citrico", "ácido cítrico",
+  "acido ascorbico", "ácido ascórbico",
+  "conservante",
+];
+
+// Keywords for ingredient risk classification (para el badge de cada ingrediente)
 const RISKY_KEYWORDS = [
+  ...ULTRA_PROCESSED_MARKERS,
   "azucar", "azúcar", "jarabe", "glucosa", "fructosa", "sacarosa",
   "hidrogenado", "hidrogenada", "trans",
-  "tbhq", "bha", "bht",
-  "nitrito", "nitrato",
   "e150", "e250", "e251",
-  "aspartamo", "ciclamato", "sacarina",
-  "acesulfame",
 ];
 
 const MODERATE_KEYWORDS = [
@@ -92,9 +137,7 @@ const MODERATE_KEYWORDS = [
   "colorante", "saborizante", "conservante",
   "fosfórico", "fosforico",
   "benzoato", "sorbato",
-  "dextrosa", "maltodextrina",
   "cafeína", "cafeina",
-  "almidón modificado", "almidon modificado",
   "propionato",
   "lecitina",
   "mono y diglicéridos", "emulsionante",
@@ -161,22 +204,44 @@ export function parseIngredients(text: string): Ingredient[] {
 }
 
 /**
- * Estima el grupo NOVA basado en la cantidad de ingredientes y presencia de aditivos.
- * NOVA 1: Natural/mínimamente procesado (pocos ingredientes, todos seguros)
- * NOVA 2: Ingrediente culinario procesado (pocos ingredientes, algunos moderados)
- * NOVA 3: Alimento procesado (varios ingredientes, algunos moderados)
- * NOVA 4: Ultra-procesado (ingredientes riesgosos o muchos aditivos)
+ * Estima el nivel de procesamiento basado en ingredientes concretos.
+ *
+ * 4 (Ultra-procesado): contiene al menos un marcador de ultra-procesado
+ * 3 (Procesado): 4-8 ingredientes con sal/azúcar/aceite/conservantes simples, sin marcadores ultra
+ * 2 (Mínimamente procesado): 2-4 ingredientes sin aditivos artificiales
+ * 1 (Natural): 1-2 ingredientes, alimentos sin modificar
  */
 export function estimateNovaGroup(ingredients: Ingredient[]): 1 | 2 | 3 | 4 {
   if (ingredients.length === 0) return 1;
 
-  const hasRisky = ingredients.some((i) => i.riskLevel === "risky");
-  const moderateCount = ingredients.filter((i) => i.riskLevel === "moderate").length;
   const total = ingredients.length;
+  const allNames = ingredients.map((i) =>
+    i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  );
 
-  if (hasRisky || (total > 5 && moderateCount > 0)) return 4;
-  if (moderateCount > 0 || total > 5) return 3;
-  if (total > 1) return 2;
+  // Check for ultra-processed markers
+  const hasUltraMarker = ULTRA_PROCESSED_MARKERS.some((marker) => {
+    const norm = marker.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return allNames.some((name) => name.includes(norm));
+  });
+
+  if (hasUltraMarker) return 4;
+
+  // Check for processed markers (sal, azúcar, aceite, conservantes simples)
+  const hasProcessedMarker = PROCESSED_MARKERS.some((marker) => {
+    const norm = marker.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return allNames.some((name) => name.includes(norm));
+  });
+
+  if (hasProcessedMarker && total >= 4) return 3;
+
+  // Mínimamente procesado: 2-4 ingredientes sin aditivos
+  if (total >= 2 && total <= 4) return 2;
+
+  // Más de 4 ingredientes sin marcadores → procesado
+  if (total > 4) return 3;
+
+  // 1 ingrediente natural
   return 1;
 }
 
