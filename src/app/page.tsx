@@ -364,15 +364,7 @@ export default function Landing() {
             Información nutricional clara basada en la Ley 27.642 de Etiquetado Frontal.
           </p>
           <p className="text-sm text-gray-400">
-            Datos provistos por{" "}
-            <a
-              href="https://world.openfoodfacts.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-gray-600"
-            >
-              Open Food Facts
-            </a>
+            Datos verificados del envase de cada producto.
           </p>
           <p className="mt-2 text-xs text-gray-300">
             Hecho en Argentina 🇦🇷

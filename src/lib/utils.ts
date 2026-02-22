@@ -27,33 +27,48 @@ export function getRatingColor(rating: Rating): string {
   }
 }
 
-export function getNovaLabel(group: number): string {
+export function getProcessingLabel(group: number): string {
   switch (group) {
     case 1:
-      return "Sin procesar";
+      return "Natural";
     case 2:
-      return "Ingredientes culinarios";
+      return "Mínimamente procesado";
     case 3:
       return "Procesado";
     case 4:
-      return "Ultraprocesado";
+      return "Ultra-procesado";
     default:
       return "Desconocido";
   }
 }
 
-export function getNovaColor(group: number): string {
+export function getProcessingColor(group: number): string {
   switch (group) {
     case 1:
       return "bg-clarito-green text-white";
     case 2:
-      return "bg-yellow-500 text-white";
+      return "bg-emerald-100 text-emerald-700";
     case 3:
-      return "bg-clarito-orange text-white";
+      return "bg-yellow-100 text-yellow-700";
     case 4:
       return "bg-clarito-red text-white";
     default:
       return "bg-gray-400 text-white";
+  }
+}
+
+export function getProcessingEmoji(group: number): string {
+  switch (group) {
+    case 1:
+      return "🥬";
+    case 2:
+      return "🍳";
+    case 3:
+      return "🏭";
+    case 4:
+      return "⚠️";
+    default:
+      return "❓";
   }
 }
 
@@ -96,10 +111,10 @@ export function generateSummary(product: {
   }
 
   if (product.novaGroup === 4) {
-    parts.push("Es un producto ultraprocesado (NOVA 4).");
+    parts.push("Es un producto ultra-procesado.");
   } else if (product.novaGroup === 1) {
     parts.push(
-      "Es un alimento sin procesar o mínimamente procesado (NOVA 1)."
+      "Es un alimento natural o mínimamente procesado."
     );
   }
 

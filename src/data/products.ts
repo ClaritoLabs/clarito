@@ -170,7 +170,7 @@ export const products: Product[] = [
     excessSaturatedFat: false,
     excessCalories: false,
     summary:
-      "La leche entera La Serenísima es un alimento sin procesar (NOVA 1) y no tiene ningún sello de advertencia. Es fuente natural de calcio, proteínas de alta calidad y vitaminas A y D. Una excelente opción para la alimentación diaria, especialmente para niños y adolescentes en crecimiento.",
+      "La leche entera La Serenísima es un alimento natural, sin procesar, y no tiene ningún sello de advertencia. Es fuente natural de calcio, proteínas de alta calidad y vitaminas A y D. Una excelente opción para la alimentación diaria, especialmente para niños y adolescentes en crecimiento.",
     nutrition: {
       calories: 61,
       totalFat: 3.1,
@@ -719,6 +719,9 @@ export const categories = [
   "Snacks",
   "Golosinas",
   "Panificados",
+  "Carnes",
+  "Almacén",
+  "Congelados",
   "Otros",
 ];
 
@@ -730,6 +733,9 @@ export const categoryEmojis: Record<string, string> = {
   Snacks: "🥔",
   Golosinas: "🍫",
   Panificados: "🍞",
+  Carnes: "🥩",
+  Almacén: "🫙",
+  Congelados: "❄️",
   Otros: "📦",
 };
 

@@ -45,4 +45,5 @@ export interface Product {
   ingredients: Ingredient[];
   imageUrl?: string;
   alternatives: Alternative[];
+  isLiquid?: boolean;
 }

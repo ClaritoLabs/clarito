@@ -1,78 +1,77 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import {
-  products as hardcodedProducts,
-  categories,
-  categoryEmojis,
-  searchProducts,
-} from "@/data/products";
-import { getSavedProducts } from "@/lib/storage";
-import { useOFFSearch } from "@/hooks/useOFFSearch";
+import { categories, categoryEmojis } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
+import type { Product } from "@/lib/types";
 
 export default function Explorar() {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
-  const [savedProducts, setSavedProducts] = useState<
-    typeof hardcodedProducts
-  >([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const { offResults, isSearching, offError } = useOFFSearch(query);
+  // Fetch products from API
+  const fetchProducts = async (
+    q: string,
+    category: string,
+    signal?: AbortSignal
+  ) => {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (category && category !== "Todas") params.set("category", category);
 
-  // Load saved products from localStorage on mount
+    const res = await fetch(`/api/products?${params}`, { signal });
+    if (!res.ok) return [];
+    return (await res.json()) as Product[];
+  };
+
+  // Initial load
   useEffect(() => {
-    setSavedProducts(getSavedProducts());
+    setIsLoading(true);
+    fetchProducts("", "Todas")
+      .then(setProducts)
+      .finally(() => setIsLoading(false));
   }, []);
 
-  // Merge hardcoded + saved, hardcoded takes precedence
-  const allLocalProducts = useMemo(() => {
-    const hardcodedBarcodes = new Set(hardcodedProducts.map((p) => p.barcode));
-    const uniqueSaved = savedProducts.filter(
-      (p) => !hardcodedBarcodes.has(p.barcode)
-    );
-    return [...hardcodedProducts, ...uniqueSaved];
-  }, [savedProducts]);
+  // Search with debounce
+  useEffect(() => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-  // Local results (instant)
-  const localResults = useMemo(() => {
-    let result = query ? searchProducts(query) : allLocalProducts;
-    if (query) {
-      const q = query.toLowerCase();
-      const savedMatches = savedProducts.filter(
-        (p) =>
-          !hardcodedProducts.some((hp) => hp.barcode === p.barcode) &&
-          (p.name.toLowerCase().includes(q) ||
-            p.brand.toLowerCase().includes(q) ||
-            p.barcode.includes(q))
-      );
-      const hardcodedResults = searchProducts(query);
-      const barcodes = new Set(hardcodedResults.map((p) => p.barcode));
-      result = [
-        ...hardcodedResults,
-        ...savedMatches.filter((p) => !barcodes.has(p.barcode)),
-      ];
-    }
-    if (selectedCategory !== "Todas") {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-    return result;
-  }, [query, selectedCategory, allLocalProducts, savedProducts]);
+    setIsSearching(true);
 
-  // Unified results: local first, then OFF (deduplicated by barcode)
-  const allResults = useMemo(() => {
-    if (!query.trim()) return localResults;
-    const localBarcodes = new Set(localResults.map((p) => p.barcode));
-    let offFiltered = offResults.filter((p) => !localBarcodes.has(p.barcode));
-    if (selectedCategory !== "Todas") {
-      offFiltered = offFiltered.filter((p) => p.category === selectedCategory);
-    }
-    return [...localResults, ...offFiltered];
-  }, [localResults, offResults, query, selectedCategory]);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await fetchProducts(
+          query,
+          selectedCategory,
+          controller.signal
+        );
+        if (!controller.signal.aborted) {
+          setProducts(results);
+        }
+      } catch {
+        // Aborted or network error
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, selectedCategory]);
 
   const hasQuery = query.trim().length > 0;
-  const noResults = hasQuery && allResults.length === 0 && !isSearching;
+  const noResults = !isLoading && !isSearching && products.length === 0;
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl">
@@ -134,13 +133,11 @@ export default function Explorar() {
               onChange={(e) => setQuery(e.target.value)}
               className="h-12 w-full rounded-2xl bg-white/95 pl-11 pr-10 text-sm text-gray-800 shadow-sm outline-none backdrop-blur-sm placeholder:text-gray-400 focus:ring-2 focus:ring-clarito-green md:text-base"
             />
-            {/* Spinner inside search bar while fetching */}
             {isSearching && hasQuery && (
               <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-clarito-green" />
               </div>
             )}
-            {/* Clear button (only when not searching) */}
             {query && !isSearching && (
               <button
                 onClick={() => setQuery("")}
@@ -186,33 +183,33 @@ export default function Explorar() {
       {/* Results count */}
       <div className="px-4 pb-2 sm:px-6 md:px-8">
         <p className="text-xs text-gray-400 md:text-sm">
-          {allResults.length} producto
-          {allResults.length !== 1 ? "s" : ""}
+          {products.length} producto
+          {products.length !== 1 ? "s" : ""}
           {selectedCategory !== "Todas" && ` en ${selectedCategory}`}
           {hasQuery && ` para "${query}"`}
-          {isSearching && hasQuery && " — buscando más..."}
         </p>
       </div>
 
-      {/* OFF partial failure */}
-      {offError && hasQuery && (
-        <div className="px-4 pb-2 sm:px-6 md:px-8">
-          <p className="text-xs text-gray-400">{offError}</p>
-        </div>
-      )}
-
-      {/* Product grid — unified list */}
+      {/* Product grid */}
       <main className="px-4 pb-8 sm:px-6 md:px-8">
-        {allResults.length > 0 && (
+        {/* Loading initial */}
+        {isLoading && (
+          <div className="flex flex-col items-center gap-3 py-16">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-clarito-green" />
+            <p className="text-sm text-gray-400">Cargando productos...</p>
+          </div>
+        )}
+
+        {!isLoading && products.length > 0 && (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-            {allResults.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.barcode} product={product} />
             ))}
           </div>
         )}
 
-        {/* No results from any source */}
-        {noResults && (
+        {/* No results */}
+        {!isLoading && noResults && hasQuery && (
           <div className="py-16 text-center">
             <p className="text-4xl">🔍</p>
             <p className="mt-4 text-lg font-medium text-gray-500">
@@ -238,16 +235,18 @@ export default function Explorar() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Agregar este producto
+              Sugerir este producto
             </Link>
           </div>
         )}
 
-        {/* Only searching, no local results yet */}
-        {hasQuery && allResults.length === 0 && isSearching && (
-          <div className="flex flex-col items-center gap-3 py-16">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-clarito-green" />
-            <p className="text-sm text-gray-400">Buscando productos...</p>
+        {/* No products at all */}
+        {!isLoading && noResults && !hasQuery && (
+          <div className="py-16 text-center">
+            <p className="text-4xl">📦</p>
+            <p className="mt-4 text-lg font-medium text-gray-500">
+              No hay productos cargados
+            </p>
           </div>
         )}
       </main>

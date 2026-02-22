@@ -9,17 +9,15 @@ export default function Contribuir() {
           Próximamente
         </h1>
         <p className="mt-3 text-base leading-relaxed text-gray-500">
-          Estamos trabajando para que puedas agregar productos que falten.
-          Mientras tanto, podés contribuir datos en{" "}
+          Estamos trabajando para que puedas sugerir productos que falten.
+          Mientras tanto, podés escribirnos a{" "}
           <a
-            href="https://world.openfoodfacts.org"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="mailto:info@clarito.app?subject=Sugerir producto"
             className="font-medium text-clarito-green underline underline-offset-2"
           >
-            Open Food Facts
+            info@clarito.app
           </a>{" "}
-          y van a aparecer automáticamente en Clarito.
+          para pedir que agreguemos un producto.
         </p>
         <Link
           href="/explorar"

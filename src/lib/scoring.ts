@@ -42,7 +42,7 @@ export function countOctogonos(oct: OctogonoResult): number {
 /**
  * Score 0-100 compuesto por:
  * - Nutri-Score (40%): A=40, B=30, C=20, D=10, E=0
- * - NOVA (30%): 1=30, 2=22, 3=15, 4=0
+ * - Procesamiento (30%): 1=30, 2=22, 3=15, 4=0
  * - Octógonos (30%): 30 - (6 * cantidad de octógonos)
  */
 export function calculateScore(
@@ -160,25 +160,75 @@ export function parseIngredients(text: string): Ingredient[] {
     .filter((i): i is Ingredient => i !== null);
 }
 
-const LIQUID_KEYWORDS = [
-  "bebida", "jugo", "juice", "agua", "water",
-  "cerveza", "beer", "gaseosa", "soda", "cola",
-  "leche", "milk", "yogur", "yogurt",
-  "vino", "wine", "refresco", "drink",
-  "néctar", "nectar", "té", "tea", "café",
-];
+/**
+ * Estima el grupo NOVA basado en la cantidad de ingredientes y presencia de aditivos.
+ * NOVA 1: Natural/mínimamente procesado (pocos ingredientes, todos seguros)
+ * NOVA 2: Ingrediente culinario procesado (pocos ingredientes, algunos moderados)
+ * NOVA 3: Alimento procesado (varios ingredientes, algunos moderados)
+ * NOVA 4: Ultra-procesado (ingredientes riesgosos o muchos aditivos)
+ */
+export function estimateNovaGroup(ingredients: Ingredient[]): 1 | 2 | 3 | 4 {
+  if (ingredients.length === 0) return 1;
 
-export function isLiquidProduct(
-  categories: string | undefined,
-  quantity: string | undefined
-): boolean {
-  if (quantity) {
-    const lower = quantity.toLowerCase();
-    if (/\d+\s*(ml|l|cl|dl)\b/.test(lower)) return true;
+  const hasRisky = ingredients.some((i) => i.riskLevel === "risky");
+  const moderateCount = ingredients.filter((i) => i.riskLevel === "moderate").length;
+  const total = ingredients.length;
+
+  if (hasRisky || (total > 5 && moderateCount > 0)) return 4;
+  if (moderateCount > 0 || total > 5) return 3;
+  if (total > 1) return 2;
+  return 1;
+}
+
+/**
+ * Estima un grado Nutri-Score simplificado (a-e) a partir de datos nutricionales.
+ * Estima un grado basado en el perfil nutricional del producto.
+ */
+export function estimateNutriscoreGrade(nutrition: Nutrition, isLiquid: boolean): string {
+  let negative = 0;
+
+  if (isLiquid) {
+    if (nutrition.calories > 54) negative += 4;
+    else if (nutrition.calories > 27) negative += 2;
+    else if (nutrition.calories > 0) negative += 1;
+
+    if (nutrition.sugars > 9) negative += 4;
+    else if (nutrition.sugars > 4.5) negative += 2;
+    else if (nutrition.sugars > 1.5) negative += 1;
+  } else {
+    if (nutrition.calories > 335) negative += 4;
+    else if (nutrition.calories > 200) negative += 2;
+    else if (nutrition.calories > 80) negative += 1;
+
+    if (nutrition.sugars > 27) negative += 4;
+    else if (nutrition.sugars > 13.5) negative += 2;
+    else if (nutrition.sugars > 4.5) negative += 1;
   }
-  if (categories) {
-    const lower = categories.toLowerCase();
-    return LIQUID_KEYWORDS.some((kw) => lower.includes(kw));
-  }
-  return false;
+
+  if (nutrition.saturatedFat > 10) negative += 4;
+  else if (nutrition.saturatedFat > 4) negative += 2;
+  else if (nutrition.saturatedFat > 1) negative += 1;
+
+  const sodiumG = nutrition.sodium / 1000;
+  if (sodiumG > 0.9) negative += 4;
+  else if (sodiumG > 0.45) negative += 2;
+  else if (sodiumG > 0.18) negative += 1;
+
+  let positive = 0;
+
+  if (nutrition.fiber > 3.5) positive += 4;
+  else if (nutrition.fiber > 2) positive += 2;
+  else if (nutrition.fiber > 0.7) positive += 1;
+
+  if (nutrition.protein > 8) positive += 4;
+  else if (nutrition.protein > 4.8) positive += 2;
+  else if (nutrition.protein > 1.6) positive += 1;
+
+  const total = negative - positive;
+
+  if (total <= -1) return "a";
+  if (total <= 3) return "b";
+  if (total <= 8) return "c";
+  if (total <= 13) return "d";
+  return "e";
 }
