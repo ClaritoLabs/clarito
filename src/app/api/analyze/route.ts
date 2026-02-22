@@ -18,11 +18,9 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { images } = body as {
-    images: { front?: string; nutrition?: string; ingredients?: string };
-  };
+  const { images } = body as { images: string[] };
 
-  if (!images?.front && !images?.nutrition && !images?.ingredients) {
+  if (!Array.isArray(images) || images.length === 0) {
     return NextResponse.json(
       { error: "Se necesita al menos una imagen" },
       { status: 400 }
@@ -31,55 +29,28 @@ export async function POST(request: NextRequest) {
 
   const content: Anthropic.Messages.ContentBlockParam[] = [];
 
-  if (images.front) {
+  for (let i = 0; i < images.length; i++) {
     content.push({
       type: "text",
-      text: "FOTO DEL FRENTE DEL PRODUCTO:",
+      text: `FOTO ${i + 1} DE ${images.length}:`,
     });
     content.push({
       type: "image",
       source: {
         type: "base64",
-        media_type: getMediaType(images.front),
-        data: stripBase64Prefix(images.front),
-      },
-    });
-  }
-
-  if (images.nutrition) {
-    content.push({
-      type: "text",
-      text: "FOTO DE LA TABLA NUTRICIONAL:",
-    });
-    content.push({
-      type: "image",
-      source: {
-        type: "base64",
-        media_type: getMediaType(images.nutrition),
-        data: stripBase64Prefix(images.nutrition),
-      },
-    });
-  }
-
-  if (images.ingredients) {
-    content.push({
-      type: "text",
-      text: "FOTO DE LA LISTA DE INGREDIENTES:",
-    });
-    content.push({
-      type: "image",
-      source: {
-        type: "base64",
-        media_type: getMediaType(images.ingredients),
-        data: stripBase64Prefix(images.ingredients),
+        media_type: getMediaType(images[i]),
+        data: stripBase64Prefix(images[i]),
       },
     });
   }
 
   content.push({
     type: "text",
-    text: `Analizá estas imágenes de un producto alimenticio argentino.
-Extraé y devolvé SOLO un JSON válido (sin markdown, sin backticks) con esta estructura exacta:
+    text: `Analizá estas fotos de un producto alimenticio argentino.
+Pueden ser fotos del frente, tabla nutricional, lista de ingredientes u otras partes del envase.
+Extraé toda la información que puedas de TODAS las fotos combinadas.
+
+Devolvé SOLO un JSON válido (sin markdown, sin backticks) con esta estructura exacta:
 {
   "barcode": string o null (si es visible en alguna foto),
   "name": string (nombre del producto),
@@ -87,23 +58,23 @@ Extraé y devolvé SOLO un JSON válido (sin markdown, sin backticks) con esta e
   "category": string (una de: "Bebidas"|"Lácteos"|"Galletitas"|"Snacks"|"Golosinas"|"Panificados"|"Carnes"|"Almacén"|"Congelados"|"Otros"),
   "productType": "solid" o "liquid",
   "nutrition": {
-    "calories": number (kcal por 100g/ml),
-    "fat": number (grasas totales en g por 100g/ml),
-    "saturatedFat": number (grasas saturadas en g por 100g/ml),
-    "sugar": number (azúcares en g por 100g/ml),
-    "sodium": number (sodio en mg por 100g/ml),
-    "fiber": number (fibra en g por 100g/ml),
-    "protein": number (proteínas en g por 100g/ml)
+    "calories": number | null (kcal por 100g/ml),
+    "fat": number | null (grasas totales en g por 100g/ml),
+    "saturatedFat": number | null (grasas saturadas en g por 100g/ml),
+    "sugar": number | null (azúcares en g por 100g/ml),
+    "sodium": number | null (sodio en mg por 100g/ml),
+    "fiber": number | null (fibra en g por 100g/ml),
+    "protein": number | null (proteínas en g por 100g/ml)
   },
   "ingredients": string[] (lista de ingredientes separados, tal como aparecen),
   "imageDescription": string (descripción breve del producto para referencia)
 }
 
 IMPORTANTE:
-- Si la tabla nutricional muestra valores por porción, convertí a por 100g/ml.
-- Si el sodio está en g, convertilo a mg (multiplicar por 1000).
-- Si algún dato no es legible, poné null.
-- Interpretá los datos de la tabla nutricional argentina.
+- Los valores nutricionales deben ser por 100g o 100ml.
+- Si la tabla muestra por porción, convertí a por 100g/100ml.
+- El sodio debe estar en mg. Si está en g, multiplicar por 1000.
+- Si algo no es legible, poné null.
 - Devolvé SOLO el JSON, sin texto adicional.
 - Extraé los ingredientes EXACTAMENTE como aparecen en el envase, separados individualmente.
   Necesitamos detectar estos marcadores de ultra-procesamiento:

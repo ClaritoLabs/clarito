@@ -75,47 +75,93 @@ function resizeImage(file: File, maxWidth: number): Promise<string> {
 
 // ── Photo Upload Zone ────────────────────────────────────────────
 
-function PhotoZone({
-  label,
-  image,
-  onImage,
+const MAX_PHOTOS = 5;
+
+function PhotoUpload({
+  photos,
+  onAdd,
+  onRemove,
 }: {
-  label: string;
-  image: string | null;
-  onImage: (data: string) => void;
+  photos: string[];
+  onAdd: (images: string[]) => void;
+  onRemove: (index: number) => void;
 }) {
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const resized = await resizeImage(file, 1200);
-    onImage(resized);
+  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    const toProcess = Array.from(files).slice(0, remaining);
+    const resized = await Promise.all(toProcess.map((f) => resizeImage(f, 1200)));
+    onAdd(resized);
+    e.target.value = "";
   };
 
   return (
-    <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-gray-200 bg-white p-4 transition-colors hover:border-clarito-green/40 active:bg-gray-50">
-      {image ? (
-        <img
-          src={image}
-          alt={label}
-          className="mb-2 h-32 w-full rounded-lg object-contain sm:h-40"
-        />
+    <div>
+      {/* Drop zone / main upload area */}
+      {photos.length === 0 ? (
+        <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-8 transition-colors hover:border-clarito-green/40 active:bg-gray-50">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+            <span className="text-3xl">📸</span>
+          </div>
+          <div className="text-center">
+            <p className="font-semibold text-gray-700">Arrastrá o sacá fotos del producto</p>
+            <p className="mt-1 text-xs text-gray-400">
+              Podés subir de 1 a 5 fotos: frente, tabla nutricional, ingredientes, o lo que necesites
+            </p>
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            onChange={handleFiles}
+            className="hidden"
+          />
+        </label>
       ) : (
-        <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gray-50 sm:h-40">
-          <svg className="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-          </svg>
+        <div className="space-y-3">
+          {/* Thumbnails grid */}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {photos.map((photo, i) => (
+              <div key={i} className="group relative">
+                <img
+                  src={photo}
+                  alt={`Foto ${i + 1}`}
+                  className="h-24 w-full rounded-xl object-cover sm:h-28"
+                />
+                <button
+                  onClick={() => onRemove(i)}
+                  className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-800 text-xs font-bold text-white shadow-md transition-opacity hover:bg-red-600 sm:opacity-0 sm:group-hover:opacity-100"
+                  aria-label="Eliminar foto"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add more button */}
+          {photos.length < MAX_PHOTOS && (
+            <label className="flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-200 text-sm font-medium text-gray-500 transition-colors hover:border-clarito-green/40 hover:text-clarito-green active:bg-gray-50">
+              + Agregar otra foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                onChange={handleFiles}
+                className="hidden"
+              />
+            </label>
+          )}
+
+          <p className="text-center text-[10px] text-gray-300">
+            {photos.length} de {MAX_PHOTOS} fotos
+          </p>
         </div>
       )}
-      <span className="mt-1 text-center text-xs font-medium text-gray-500">{label}</span>
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFile}
-        className="hidden"
-      />
-    </label>
+    </div>
   );
 }
 
@@ -312,9 +358,7 @@ export default function AdminPage() {
 
   // Photo + AI state
   const [step, setStep] = useState<Step>("photos");
-  const [imgFront, setImgFront] = useState<string | null>(null);
-  const [imgNutrition, setImgNutrition] = useState<string | null>(null);
-  const [imgIngredients, setImgIngredients] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
   // Form state (editable after AI analysis, or for manual edit)
@@ -354,7 +398,7 @@ export default function AdminPage() {
   // ── AI Analysis ──
 
   const handleAnalyze = async () => {
-    if (!imgFront && !imgNutrition && !imgIngredients) {
+    if (photos.length === 0) {
       showMessage("error", "Subí al menos una foto");
       return;
     }
@@ -369,13 +413,7 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "x-admin-password": ADMIN_PASSWORD,
         },
-        body: JSON.stringify({
-          images: {
-            front: imgFront || undefined,
-            nutrition: imgNutrition || undefined,
-            ingredients: imgIngredients || undefined,
-          },
-        }),
+        body: JSON.stringify({ images: photos }),
       });
 
       const data = await res.json();
@@ -428,7 +466,7 @@ export default function AdminPage() {
         name: form.name,
         brand: form.brand,
         category: form.category,
-        imageUrl: imgFront || "",
+        imageUrl: photos[0] || "",
         isLiquid: form.isLiquid,
         calories: Number(form.calories) || 0,
         totalFat: Number(form.totalFat) || 0,
@@ -485,9 +523,7 @@ export default function AdminPage() {
       protein: String(product.nutrition.protein || ""),
       ingredientsText: product.ingredients.map((i) => i.name).join(", "),
     });
-    setImgFront(null);
-    setImgNutrition(null);
-    setImgIngredients(null);
+    setPhotos([]);
     setStep("review");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -512,9 +548,7 @@ export default function AdminPage() {
 
   const resetAll = () => {
     setForm(emptyForm);
-    setImgFront(null);
-    setImgNutrition(null);
-    setImgIngredients(null);
+    setPhotos([]);
     setStep("photos");
     setEditingBarcode(null);
   };
@@ -523,7 +557,7 @@ export default function AdminPage() {
     return <PasswordGate onAuth={() => setAuthenticated(true)} />;
   }
 
-  const hasAnyImage = !!(imgFront || imgNutrition || imgIngredients);
+  const hasAnyImage = photos.length > 0;
 
   return (
     <div className="min-h-screen bg-clarito-bg pb-8">
@@ -562,11 +596,15 @@ export default function AdminPage() {
                 Sacá fotos del producto y la IA extrae los datos automáticamente.
               </p>
 
-              <div className="grid grid-cols-3 gap-3">
-                <PhotoZone label="📸 Frente" image={imgFront} onImage={setImgFront} />
-                <PhotoZone label="📸 Nutrición" image={imgNutrition} onImage={setImgNutrition} />
-                <PhotoZone label="📸 Ingredientes" image={imgIngredients} onImage={setImgIngredients} />
-              </div>
+              <PhotoUpload
+                photos={photos}
+                onAdd={(newPhotos) =>
+                  setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS))
+                }
+                onRemove={(index) =>
+                  setPhotos((prev) => prev.filter((_, i) => i !== index))
+                }
+              />
 
               <button
                 onClick={handleAnalyze}
@@ -601,12 +639,12 @@ export default function AdminPage() {
             {hasAnyImage && (
               <details className="rounded-2xl bg-white shadow-sm">
                 <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-gray-500 sm:px-6">
-                  📷 Ver fotos originales
+                  📷 Ver fotos originales ({photos.length})
                 </summary>
-                <div className="grid grid-cols-3 gap-2 px-4 pb-4 sm:px-6">
-                  {imgFront && <img src={imgFront} alt="Frente" className="rounded-lg" />}
-                  {imgNutrition && <img src={imgNutrition} alt="Nutrición" className="rounded-lg" />}
-                  {imgIngredients && <img src={imgIngredients} alt="Ingredientes" className="rounded-lg" />}
+                <div className="grid grid-cols-3 gap-2 px-4 pb-4 sm:grid-cols-5 sm:px-6">
+                  {photos.map((photo, i) => (
+                    <img key={i} src={photo} alt={`Foto ${i + 1}`} className="rounded-lg" />
+                  ))}
                 </div>
               </details>
             )}
